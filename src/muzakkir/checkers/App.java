@@ -7,34 +7,34 @@ public class App {
 	final static int boardHeight = 8;
 	final static int boardLength = 8;
 	static Cell[][] cells = new Cell[boardHeight][boardLength];
+	static Scanner scanner = new Scanner(System.in);
 	
 	public static void main(String[] args) {	
 		
 		// initializations
 		Cell cell;
-		Scanner scanner = new Scanner(System.in);
 		int turn = 0;
 		Board board = new Board(boardHeight, boardLength, cells);
 
 		board.drawBoard(cells, boardHeight, boardLength, turn);
-		String input = "";
+		//TODO change turn to until one side have no piece anymore
 		while (turn < 20) {
 
 			// Player 1 turn BLACK topside
 			if (turn % 2 == 0) {
 				System.out.print("Black turn to move. ");
-				do {
-					input = getInput(scanner);
-					cell = convertInput(board.cells, input);
-
-					if (cell.getType() == Type.EMPTY)
-						System.out.print("The selected piece is empty. ");
-					if (cell.getType() == Type.RED)
-						System.out.print("The selected piece is red. ");
-				} while (cell.getType() != Type.BLACK || !checkMovePossible(cell, board.cells));
-
+//				do {
+//					cell = getInput(board.cells);
+//
+//					if (cell.getType() == Type.EMPTY)
+//						System.out.print("The selected piece is empty. ");
+//					if (cell.getType() == Type.RED)
+//						System.out.print("The selected piece is red. ");
+//				} while (cell.getType() != Type.BLACK || !checkMovePossible(cell, board.cells));
+				cell = getCell(board, Type.BLACK, Type.RED);
+				
 				// Getting direction to move
-				Direction dir = getDirection(scanner, cell, board.cells);
+				Direction dir = getDirection(cell, board.cells);
 				moveType(cell, dir, board.cells);
 
 				turn++;
@@ -44,18 +44,18 @@ public class App {
 			// Player 2 turn RED downside
 			else {
 				System.out.print("Red turn to move. ");
-				do {
-					input = getInput(scanner);
-					cell = convertInput(board.cells, input);
-
-					if (cell.getType() == Type.EMPTY)
-						System.out.print("The selected piece is empty. ");
-					if (cell.getType() == Type.BLACK)
-						System.out.print("The selected piece is black. ");
-				} while (cell.getType() != Type.RED || !checkMovePossible(cell, board.cells));
-
+//				do {
+//					cell = getInput(board.cells);
+//
+//					if (cell.getType() == Type.EMPTY)
+//						System.out.print("The selected piece is empty. ");
+//					if (cell.getType() == Type.BLACK)
+//						System.out.print("The selected piece is black. ");
+//				} while (cell.getType() != Type.RED || !checkMovePossible(cell, board.cells));
+				cell = getCell(board, Type.RED, Type.BLACK);
+				
 				// Getting direction to move
-				Direction dir = getDirection(scanner, cell, board.cells);
+				Direction dir = getDirection(cell, board.cells);
 				moveType(cell, dir, board.cells);
 
 				turn++;
@@ -64,8 +64,25 @@ public class App {
 		}
 		scanner.close();
 	}
+	
+	public static Cell getCell (Board board, Type colorTurnNow, Type colorOpps) {
+		Cell cell;
+		do {
+			cell = getInput(board.cells);
 
-	public static String getInput(Scanner scanner) {
+			if (cell.getType() == Type.EMPTY)
+				System.out.print("The selected piece is empty. ");
+			if (cell.getType() == colorOpps) {
+				String s = "The selected piece is %s.";
+				s = String.format(s, colorOpps == Type.BLACK ? "black" : "red"); 
+				System.out.print(s);
+				}
+		} while (cell.getType() != colorTurnNow || !checkMovePossible(cell, board.cells));
+		
+		return cell;
+	}
+	
+	public static Cell getInput(Cell[][] cells) {
 		String input = "";
 
 		do {
@@ -74,19 +91,14 @@ public class App {
 			if (!input.matches("^[A-Ha-h][1-8]$"))
 				System.out.println("Select a piece between A1 - H8");
 		} while (!input.matches("^[A-Ha-h][1-8]$"));
-
-		return input.toUpperCase();
-	}
-
-	public static Cell convertInput(Cell[][] cells, String input) {
-
+		
+		input = input.toUpperCase();
 		int x = input.charAt(0) - 65;
 		int y = Character.getNumericValue(input.charAt(1)) - 1;
-
 		return cells[x][y];
 	}
 
-	public static Direction getDirection(Scanner scanner, Cell cell, Cell[][] cells) {
+	public static Direction getDirection(Cell cell, Cell[][] cells) {
 		Direction dir = null;
 		if (cell.getY() == 0 || !checkLeftRightPieceMoveValid(cell, cells, Direction.LEFT)) {
 			return dir = Direction.RIGHT;
@@ -231,12 +243,19 @@ public class App {
 			move(cell, dir, cells);
 		} else {
 			overtake(cell, dir, cells);
+			//TODO
+			//After overtake check for the next piece
+			//Only overtake need to return new cell
+//			if(checkMovePossible(cell, cells)) {
+//				overtake(cell, dir, cells);
+//			}
 		}
 	}
 
 	public static void move(Cell cell, Direction dir, Cell[][] cells) {
 		int x = cell.getX();
 		int y = cell.getY();
+
 		if (cell.getType() == Type.BLACK) {
 			switch (dir) {
 			case RIGHT:
@@ -265,32 +284,37 @@ public class App {
 	public static void overtake(Cell cell, Direction dir, Cell[][] cells) {
 		int x = cell.getX();
 		int y = cell.getY();
-		if (cell.getType() == Type.BLACK) {
-			switch (dir) {
-			case RIGHT:
-				cells[x][y].setType(Type.EMPTY);
-				cells[x + 1][y + 1].setType(Type.EMPTY);
-				cells[x + 2][y + 2].setType(Type.BLACK);
-				break;
-			case LEFT:
-				cells[x][y].setType(Type.EMPTY);
-				cells[x + 1][y - 1].setType(Type.EMPTY);
-				cells[x + 2][y - 2].setType(Type.BLACK);
-				break;
-			}
-		} else if (cell.getType() == Type.RED) {
-			switch (dir) {
-			case RIGHT:
-				cells[x][y].setType(Type.EMPTY);
-				cells[x - 1][y + 1].setType(Type.EMPTY);
-				cells[x - 2][y + 2].setType(Type.RED);
-				break;
-			case LEFT:
-				cells[x][y].setType(Type.EMPTY);
-				cells[x - 1][y - 1].setType(Type.EMPTY);
-				cells[x - 2][y - 2].setType(Type.RED);
-				break;
-			}
-		}
+		Type cellclr = cell.getType();
+		cells[x][y].setType(Type.EMPTY);
+		cells[cellclr == Type.BLACK ? x + 2 : x - 2][dir == Direction.RIGHT ? y + 2 : y - 2].setType(cellclr);
+		cells[cellclr == Type.BLACK ? x + 1 : x - 1][dir == Direction.RIGHT ? y + 1 : y - 1].setType(Type.EMPTY);
+		
+//		if (cell.getType() == Type.BLACK) {
+//			switch (dir) {
+//			case RIGHT:
+//				cells[x][y].setType(Type.EMPTY);
+//				cells[x + 1][y + 1].setType(Type.EMPTY);
+//				cells[x + 2][y + 2].setType(Type.BLACK);
+//				break;
+//			case LEFT:
+//				cells[x][y].setType(Type.EMPTY);
+//				cells[x + 1][y - 1].setType(Type.EMPTY);
+//				cells[x + 2][y - 2].setType(Type.BLACK);
+//				break;
+//			}
+//		} else if (cell.getType() == Type.RED) {
+//			switch (dir) {
+//			case RIGHT:
+//				cells[x][y].setType(Type.EMPTY);
+//				cells[x - 1][y + 1].setType(Type.EMPTY);
+//				cells[x - 2][y + 2].setType(Type.RED);
+//				break;
+//			case LEFT:
+//				cells[x][y].setType(Type.EMPTY);
+//				cells[x - 1][y - 1].setType(Type.EMPTY);
+//				cells[x - 2][y - 2].setType(Type.RED);
+//				break;
+//			}
+//		}
 	}
 }
